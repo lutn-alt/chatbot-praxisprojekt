@@ -1,0 +1,116 @@
+services:
+
+  # ─────────────────────────────────────────
+  # Qdrant – Vektordatenbank
+  # ─────────────────────────────────────────
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"   # REST API
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  # ─────────────────────────────────────────
+  # PostgreSQL – Datenbank (für n8n & andere)
+  # ─────────────────────────────────────────
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: changeme          # <-- bitte ändern!
+      POSTGRES_DB: n8n
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d n8n"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ─────────────────────────────────────────
+  # Ollama – LLM-Backend
+  # ─────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # GPU-Unterstützung (einkommentieren falls NVIDIA-GPU vorhanden):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # ─────────────────────────────────────────
+  # Open WebUI – Chat-Frontend für LLMs
+  # ─────────────────────────────────────────
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    environment:
+      # Ollama läuft jetzt im selben Compose-Stack:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      # Qdrant als Vektorspeicher einbinden (optional):
+      - QDRANT_URL=http://qdrant:6333
+    volumes:
+      - open_webui_data:/app/backend/data
+    depends_on:
+      - qdrant
+      - ollama
+
+  # ─────────────────────────────────────────
+  # n8n – Workflow-Automatisierung
+  # ─────────────────────────────────────────
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=admin
+      - DB_POSTGRESDB_PASSWORD=changeme    # <-- gleich wie oben!
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=changeme  # <-- bitte ändern!
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=Europe/Berlin
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+# ─────────────────────────────────────────
+# Volumes
+# ─────────────────────────────────────────
+volumes:
+  qdrant_data:
+  postgres_data:
+  open_webui_data:
+  n8n_data:
+  ollama_data:
