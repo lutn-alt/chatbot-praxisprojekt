@@ -30,7 +30,7 @@ Das System besteht aus folgenden Komponenten, die alle als Docker Container lauf
 | `qdrant`      | Vektor-Datenbank für semantische Suche            | 6333 / 6334 |
 | `postgres`    | Chat-Verlauf / Session-Speicher für den AI-Agent  | 5432        |
 
-**Datenfluss:** OpenProject → n8n → Ollama Embeddings → Qdrant  
+**Datenfluss:** OpenProject → n8n (Sync alle 6h) → Ollama Embeddings → Qdrant  
 **Anfrage:** Open WebUI → n8n AI-Agent → Qdrant (semantische Suche) → Ollama LLM → Antwort
 
 ---
