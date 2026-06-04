@@ -276,7 +276,7 @@ curl -X POST http://localhost:5678/webhook/invoke_n8n_agent \
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│              Datenpipeline  (alle 6 Stunden)             │
+│                    Datenpipeline                         │
 │                                                          │
 │  OpenProject API                                         │
 │    → Alle Projekte, Work Packages, Kommentare            │
@@ -290,7 +290,7 @@ curl -X POST http://localhost:5678/webhook/invoke_n8n_agent \
 │  Nutzer tippt Frage in Open WebUI (Port 3000)            │
 │    → n8n AI-Agent                                        │
 │    → Qdrant  (Top-200 semantisch ähnliche Einträge)      │
-│    → Ollama LLM  (llama3.1:8b  →  Antwort auf Deutsch)  │
+│    → Ollama LLM  (llama3.1:8b  →  Antwort auf Deutsch)   │
 │  Postgres speichert den Chat-Verlauf je Session          │
 └─────────────────────────────────────────────────────────┘
 ```
