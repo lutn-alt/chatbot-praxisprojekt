@@ -13,6 +13,7 @@ Ein KI-gestützter Chatbot, der OpenProject-Kommentare und Work Packages durchsu
 - [Docker Images herunterladen](#docker-images-herunterladen)
 - [Ollama-Modelle herunterladen](#ollama-modelle-herunterladen)
 - [n8n-Workflows einrichten](#n8n-workflows-einrichten)
+- [Open WebUI – N8N Pipe einrichten](#open-webui--n8n-pipe-einrichten)
 - [Erster Start & Datensynchronisation](#erster-start--datensynchronisation)
 - [Nutzung](#nutzung)
 - [Architektur](#architektur)
@@ -29,6 +30,7 @@ chatbot-praxisprojekt/
 ├── n8n_workflows.zip           ← n8n-Workflows (ZIP-Archiv)
 │   ├── AI-Agent.json           ← Chatbot-Agent
 │   └── op-api-speichern.json   ← Datenpipeline OpenProject → Qdrant
+├── n8n_pipe.json               ← Open WebUI Pipe-Funktion (verbindet WebUI ↔ n8n)
 └── docs/                       ← Dokumentation (folgt)
 ```
 
@@ -48,7 +50,7 @@ Das System besteht aus folgenden Komponenten, die alle als Docker Container lauf
 | `open-webui`  | `ghcr.io/open-webui/open-webui:main`   | Chat-Oberfläche für den Endnutzer                   | 3000 → 8080  |
 | `n8n`         | `docker.n8n.io/n8nio/n8n:latest`       | Workflow-Automatisierung (AI-Agent + Datenpipeline) | 5678         |
 
-**Datenfluss:** OpenProject → n8n → Ollama Embeddings → Qdrant  
+**Datenfluss:** OpenProject → n8n (Sync alle 6h) → Ollama Embeddings → Qdrant  
 **Anfrage:** Open WebUI → n8n AI-Agent → Qdrant (semantische Suche) → Ollama LLM → Antwort
 
 ---
@@ -232,6 +234,45 @@ Beide Workflows über den Toggle oben rechts auf **"Active"** setzen.
 
 ---
 
+## Open WebUI – N8N Pipe einrichten
+
+Die **N8N Pipe** ist eine Funktion für Open WebUI, die die Chat-Oberfläche direkt mit dem n8n AI-Agent verbindet. Ohne sie würde Open WebUI nur lokal installierte Ollama-Modelle nutzen – mit der Pipe werden alle Nachrichten stattdessen an den n8n-Workflow weitergeleitet, der Qdrant-Suche, Chat-Memory und die OpenProject-Daten einbindet.
+
+Quelle / Original: [N8N Pipe auf openwebui.com](https://openwebui.com/posts/c82c9b29-c517-4deb-bd42-d058aa889633)
+
+### Schritt 1: Funktion importieren
+
+1. Open WebUI aufrufen: `http://localhost:3000`
+2. Als Admin anmelden
+3. Oben im Menü auf **"Functions"** klicken
+4. Oben rechts auf **"Import"** klicken
+5. Die Datei `n8n_pipe.json` aus dem Repository auswählen und importieren
+6. Die Funktion erscheint anschließend als **„N8N Pipe v0.2.0"** in der Liste
+7. Den Toggle rechts neben der Funktion auf **aktiv** (grün) setzen
+
+### Schritt 2: Valves konfigurieren
+
+Die Pipe muss mit der URL des n8n-Webhooks und einem optionalen Bearer Token konfiguriert werden. Dazu auf das **Zahnrad-Symbol** neben der N8N Pipe klicken – es öffnet sich das Valves-Fenster:
+
+| Feld                    | Wert                                          | Beschreibung                                      |
+|-------------------------|-----------------------------------------------|---------------------------------------------------|
+| **N8N Url**             | `http://n8n:5678/webhook/invoke_n8n_agent`    | Webhook-URL des AI-Agent-Workflows in n8n         |
+| **N8N Bearer Token**    | `...` *(leer lassen oder eigenen Token setzen)* | Absicherung des Webhooks – in dieser Installation nicht aktiv |
+| **Input Field**         | `chatInput`                                   | Feldname für die Nutzernachricht (nicht ändern)   |
+| **Response Field**      | `output`                                      | Feldname der Antwort aus n8n (nicht ändern)       |
+| **Emit Interval**       | `2`                                           | Sekunden zwischen Status-Updates                  |
+| **Enable Status Indicator** | aktiv                                    | Zeigt „Calling N8N Workflow…" während der Antwort |
+
+Anschließend auf **"Save"** klicken.
+
+> **Hinweis zur URL:** Da Open WebUI und n8n im selben Docker-Netzwerk laufen, wird der Container-Name `n8n` als Hostname verwendet – nicht `localhost`.
+
+### Schritt 3: Pipe als Modell auswählen
+
+Beim Starten eines neuen Chats in Open WebUI im Modell-Dropdown oben **„N8N Pipe"** auswählen. Ab jetzt werden alle Nachrichten über n8n bearbeitet und mit den OpenProject-Daten beantwortet.
+
+---
+
 ## Erster Start & Datensynchronisation
 
 Der Workflow `op-api-speichern` synchronisiert automatisch alle **6 Stunden** alle OpenProject-Kommentare und Work Packages in die Qdrant-Vektordatenbank.
@@ -276,7 +317,7 @@ curl -X POST http://localhost:5678/webhook/invoke_n8n_agent \
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    Datenpipeline                         │
+│              Datenpipeline  (alle 6 Stunden)             │
 │                                                          │
 │  OpenProject API                                         │
 │    → Alle Projekte, Work Packages, Kommentare            │
@@ -290,7 +331,7 @@ curl -X POST http://localhost:5678/webhook/invoke_n8n_agent \
 │  Nutzer tippt Frage in Open WebUI (Port 3000)            │
 │    → n8n AI-Agent                                        │
 │    → Qdrant  (Top-200 semantisch ähnliche Einträge)      │
-│    → Ollama LLM  (llama3.1:8b  →  Antwort auf Deutsch)   │
+│    → Ollama LLM  (llama3.1:8b  →  Antwort auf Deutsch)  │
 │  Postgres speichert den Chat-Verlauf je Session          │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -298,6 +339,12 @@ curl -X POST http://localhost:5678/webhook/invoke_n8n_agent \
 ---
 
 ## Troubleshooting
+
+**N8N Pipe antwortet nicht / Fehler im Chat**  
+→ Sicherstellen, dass die N8N Url in den Valves `http://n8n:5678/webhook/invoke_n8n_agent` lautet (Container-Name, nicht `localhost`). Den AI-Agent-Workflow in n8n auf „Active" prüfen.
+
+**N8N Pipe taucht im Modell-Dropdown nicht auf**  
+→ In Open WebUI unter **Functions** prüfen ob der Toggle der N8N Pipe grün (aktiv) ist.
 
 **Container startet nicht**
 ```bash
