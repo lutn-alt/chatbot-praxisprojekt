@@ -317,7 +317,7 @@ curl -X POST http://localhost:5678/webhook/invoke_n8n_agent \
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│              Datenpipeline  (alle 6 Stunden)             │
+│                    Datenpipeline                         │
 │                                                          │
 │  OpenProject API                                         │
 │    → Alle Projekte, Work Packages, Kommentare            │
