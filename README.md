@@ -71,8 +71,8 @@ Das System besteht aus folgenden Komponenten, die alle als Docker Container lauf
 ### 1. Repository klonen
 
 ```bash
-git clone https://github.com/<dein-benutzername>/<repo-name>.git
-cd <repo-name>
+git clone https://github.com/lutn-alt/chatbot-praxisprojekt.git
+cd chatbot-praxisprojekt
 ```
 
 ### 2. Passwörter in der docker-compose.yml anpassen
