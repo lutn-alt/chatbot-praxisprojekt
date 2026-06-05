@@ -18,6 +18,7 @@ Ein KI-gestützter Chatbot, der OpenProject-Kommentare und Work Packages durchsu
 - [Nutzung](#nutzung)
 - [Architektur](#architektur)
 - [Troubleshooting](#troubleshooting)
+- [Möglichkeiten der Erweiterung](#möglichkeiten-der-erweiterung)
 
 ---
 
@@ -50,7 +51,7 @@ Das System besteht aus folgenden Komponenten, die alle als Docker Container lauf
 | `open-webui`  | `ghcr.io/open-webui/open-webui:main`   | Chat-Oberfläche für den Endnutzer                   | 3000 → 8080  |
 | `n8n`         | `docker.n8n.io/n8nio/n8n:latest`       | Workflow-Automatisierung (AI-Agent + Datenpipeline) | 5678         |
 
-**Datenfluss:** OpenProject → n8n → Ollama Embeddings → Qdrant  
+**Datenfluss:** OpenProject → n8n (Sync alle 6h) → Ollama Embeddings → Qdrant  
 **Anfrage:** Open WebUI → n8n AI-Agent → Qdrant (semantische Suche) → Ollama LLM → Antwort
 
 ---
@@ -70,8 +71,8 @@ Das System besteht aus folgenden Komponenten, die alle als Docker Container lauf
 ### 1. Repository klonen
 
 ```bash
-git clone https://github.com/lutn-alt/chatbot-praxisprojekt.git
-cd chatbot-praxisprojekt
+git clone https://github.com/<dein-benutzername>/<repo-name>.git
+cd <repo-name>
 ```
 
 ### 2. Passwörter in der docker-compose.yml anpassen
@@ -95,7 +96,7 @@ N8N_BASIC_AUTH_PASSWORD: dein_sicheres_passwort
 docker compose up -d
 ```
 
-Beim ersten Start werden alle Images automatisch aus dem Internet gezogen, das kann je nach Internetgeschwindigkeit **5–15 Minuten** dauern (Gesamtgröße ca. 10–15 GB).
+Beim ersten Start werden alle Images automatisch aus dem Internet gezogen – das kann je nach Internetgeschwindigkeit **5–15 Minuten** dauern (Gesamtgröße ca. 10–15 GB).
 
 ---
 
@@ -236,7 +237,7 @@ Beide Workflows über den Toggle oben rechts auf **"Active"** setzen.
 
 ## Open WebUI – N8N Pipe einrichten
 
-Die **N8N Pipe** ist eine Funktion für Open WebUI, die die Chat-Oberfläche direkt mit dem n8n AI-Agent verbindet. Ohne sie würde Open WebUI nur lokal installierte Ollama-Modelle nutzen, mit der Pipe werden alle Nachrichten stattdessen an den n8n-Workflow weitergeleitet, der Qdrant-Suche, Chat-Memory und die OpenProject-Daten einbindet.
+Die **N8N Pipe** ist eine Funktion für Open WebUI, die die Chat-Oberfläche direkt mit dem n8n AI-Agent verbindet. Ohne sie würde Open WebUI nur lokal installierte Ollama-Modelle nutzen – mit der Pipe werden alle Nachrichten stattdessen an den n8n-Workflow weitergeleitet, der Qdrant-Suche, Chat-Memory und die OpenProject-Daten einbindet.
 
 Quelle / Original: [N8N Pipe auf openwebui.com](https://openwebui.com/posts/c82c9b29-c517-4deb-bd42-d058aa889633)
 
@@ -244,12 +245,11 @@ Quelle / Original: [N8N Pipe auf openwebui.com](https://openwebui.com/posts/c82c
 
 1. Open WebUI aufrufen: `http://localhost:3000`
 2. Als Admin anmelden
-3. In das Admin panel gehen
-4. Oben im Menü auf **"Functions"** klicken
-5. Oben rechts auf **"Import"** klicken
-6. Die Datei `n8n_pipe.json` aus dem Repository auswählen und importieren
-7. Die Funktion erscheint anschließend als **„N8N Pipe v0.2.0"** in der Liste
-8. Den Toggle rechts neben der Funktion auf **aktiv** (grün) setzen
+3. Oben im Menü auf **"Functions"** klicken
+4. Oben rechts auf **"Import"** klicken
+5. Die Datei `n8n_pipe.json` aus dem Repository auswählen und importieren
+6. Die Funktion erscheint anschließend als **„N8N Pipe v0.2.0"** in der Liste
+7. Den Toggle rechts neben der Funktion auf **aktiv** (grün) setzen
 
 ### Schritt 2: Valves konfigurieren
 
@@ -318,7 +318,7 @@ curl -X POST http://localhost:5678/webhook/invoke_n8n_agent \
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    Datenpipeline                         │
+│              Datenpipeline  (alle 6 Stunden)             │
 │                                                          │
 │  OpenProject API                                         │
 │    → Alle Projekte, Work Packages, Kommentare            │
@@ -332,7 +332,7 @@ curl -X POST http://localhost:5678/webhook/invoke_n8n_agent \
 │  Nutzer tippt Frage in Open WebUI (Port 3000)            │
 │    → n8n AI-Agent                                        │
 │    → Qdrant  (Top-200 semantisch ähnliche Einträge)      │
-│    → Ollama LLM  (llama3.1:8b  →  Antwort auf Deutsch)   │
+│    → Ollama LLM  (llama3.1:8b  →  Antwort auf Deutsch)  │
 │  Postgres speichert den Chat-Verlauf je Session          │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -385,3 +385,119 @@ Weiterführende Dokumentation wird im Ordner `docs/` abgelegt (folgt).
 ## Lizenz
 
 Dieses Projekt ist ein Praxisprojekt und nicht für den öffentlichen Einsatz vorgesehen.
+
+---
+
+## Möglichkeiten der Erweiterung
+
+### GPU-Anbindung (dringend empfohlen)
+
+> ⚠️ **Wichtiger Hinweis:** Ohne GPU-Beschleunigung läuft das LLM (`llama3.1:8b`) ausschließlich auf der CPU. Die Antwortzeiten betragen dann **30–120 Sekunden pro Nachricht** und machen den Chatbot für den produktiven Einsatz praktisch unbrauchbar. Eine NVIDIA-GPU verbessert die Performance auf **2–5 Sekunden** – das ist kein optionales Upgrade, sondern eine Grundvoraussetzung für sinnvolle Nutzung.
+
+#### Voraussetzungen
+
+- NVIDIA-Grafikkarte (mindestens 8 GB VRAM für llama3.1:8b)
+- [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installiert
+- Aktueller NVIDIA-Treiber
+
+#### Aktivierung in der docker-compose.yml
+
+Den auskommentierten GPU-Block im `ollama`-Service einkommentieren:
+
+```yaml
+ollama:
+  image: ollama/ollama:latest
+  # ...
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
+```
+
+Danach Container neu starten:
+
+```bash
+docker compose down
+docker compose up -d
+```
+
+GPU-Nutzung prüfen:
+
+```bash
+docker exec ollama ollama ps
+# oder auf dem Host:
+nvidia-smi
+```
+
+---
+
+### Weitere Systeme anbinden
+
+Das System ist modular aufgebaut – weitere Datenquellen lassen sich über neue n8n-Workflows anbinden. Die Daten werden dabei immer nach demselben Prinzip verarbeitet: Inhalte abrufen → Embeddings erzeugen (Ollama) → in Qdrant speichern. Der AI-Agent greift dann automatisch auch auf diese Daten zu.
+
+---
+
+#### ELO (DMS / Dokumentenmanagement)
+
+ELO bietet eine REST-API (`ELO REST API`) über die Dokumente, Akten und Metadaten abgerufen werden können.
+
+**Anbindung über n8n:**
+
+1. In n8n einen neuen Workflow anlegen (analog zu `op-api-speichern`)
+2. Per **HTTP Request**-Knoten die ELO REST API abfragen:
+   - Endpunkt: `http://<elo-server>/ix-<archivname>/plugin/de.elo.ix.plugin.proxy/rest/`
+   - Authentifizierung: Basic Auth mit ELO-Benutzer
+   - Relevante Endpunkte: `/search` für Volltextsuche, `/document/{id}` für einzelne Dokumente
+3. Dokumenteninhalte und Metadaten (Titel, Ablageort, Datum) als Text zusammenführen
+4. Über Ollama embedden und in eine eigene Qdrant-Collection speichern (z.B. `elo-documents`)
+5. Im AI-Agent-Workflow ein weiteres **Vector Store Tool** für die `elo-documents`-Collection ergänzen
+
+**Hinweis:** Für OCR-gescannte Dokumente in ELO muss der Volltext in ELO selbst bereits indiziert sein, damit er über die API abrufbar ist.
+
+---
+
+#### IBM DOORS (Anforderungsmanagement)
+
+IBM DOORS Next (DOORS 9 mit DXL oder DOORS Next Generation mit REST) lässt sich ebenfalls als Datenquelle einbinden.
+
+**DOORS Next Generation (DNG) – Anbindung über n8n:**
+
+1. Neuen n8n-Workflow anlegen
+2. Per **HTTP Request** die OSLC/REST-API von DNG abfragen:
+   - Basis-URL: `https://<doors-server>/rm/`
+   - Authentifizierung: Basic Auth oder OAuth
+   - Relevante Ressourcen: Requirements, Module, Comments
+3. Anforderungstext, ID, Modul und Status als strukturierten Text zusammenführen
+4. Embedden und in Qdrant-Collection `doors-requirements` speichern
+5. Im AI-Agent als weiteres Vector Store Tool ergänzen
+
+**DOORS 9 (klassisch) – Anbindung über DXL-Export:**
+
+Da DOORS 9 keine native REST-API bietet, empfiehlt sich ein regelmäßiger **DXL-Skript-Export** nach CSV oder JSON, der dann von n8n eingelesen wird:
+
+1. DXL-Skript in DOORS 9 exportiert Anforderungen als CSV
+2. n8n liest die CSV-Datei (z.B. aus einem Netzlaufwerk oder SFTP)
+3. Weiterverarbeitung wie oben (Embeddings → Qdrant)
+
+---
+
+#### Allgemeines Schema für neue Datenquellen
+
+Jede weitere Datenquelle folgt demselben Muster:
+
+```
+[Trigger: Schedule / Webhook]
+    ↓
+[HTTP Request: Daten aus System X abrufen]
+    ↓
+[Code-Knoten: Inhalt & Metadaten strukturieren]
+    ↓
+[Ollama Embedding: nomic-embed-text]
+    ↓
+[Qdrant: In eigene Collection speichern, z.B. "system-x"]
+```
+
+Im AI-Agent-Workflow dann ein weiteres **Vector Store Tool** für die neue Collection ergänzen – der Agent entscheidet selbst, welche Collections für eine Frage relevant sind.
