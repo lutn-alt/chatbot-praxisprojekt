@@ -237,7 +237,7 @@ Beide Workflows über den Toggle oben rechts auf **"Active"** setzen.
 
 ## Open WebUI – N8N Pipe einrichten
 
-Die **N8N Pipe** ist eine Funktion für Open WebUI, die die Chat-Oberfläche direkt mit dem n8n AI-Agent verbindet. Ohne sie würde Open WebUI nur lokal installierte Ollama-Modelle nutzen – mit der Pipe werden alle Nachrichten stattdessen an den n8n-Workflow weitergeleitet, der Qdrant-Suche, Chat-Memory und die OpenProject-Daten einbindet.
+Die **N8N Pipe** ist eine Funktion für Open WebUI, die die Chat-Oberfläche direkt mit dem n8n AI-Agent verbindet. Ohne sie würde Open WebUI nur lokal installierte Ollama-Modelle nutzen, mit der Pipe werden alle Nachrichten stattdessen an den n8n-Workflow weitergeleitet, der Qdrant-Suche, Chat-Memory und die OpenProject-Daten einbindet.
 
 Quelle / Original: [N8N Pipe auf openwebui.com](https://openwebui.com/posts/c82c9b29-c517-4deb-bd42-d058aa889633)
 
@@ -266,7 +266,7 @@ Die Pipe muss mit der URL des n8n-Webhooks und einem optionalen Bearer Token kon
 
 Anschließend auf **"Save"** klicken.
 
-> **Hinweis zur URL:** Da Open WebUI und n8n im selben Docker-Netzwerk laufen, wird der Container-Name `n8n` als Hostname verwendet – nicht `localhost`.
+> **Hinweis zur URL:** Da Open WebUI und n8n im selben Docker-Netzwerk laufen, wird der Container-Name `n8n` als Hostname verwendet, nicht `localhost`.
 
 ### Schritt 3: Pipe als Modell auswählen
 
@@ -276,13 +276,13 @@ Beim Starten eines neuen Chats in Open WebUI im Modell-Dropdown oben **„N8N Pi
 
 ## Erster Start & Datensynchronisation
 
-Der Workflow `op-api-speichern` synchronisiert automatisch alle **6 Stunden** alle OpenProject-Kommentare und Work Packages in die Qdrant-Vektordatenbank.
+Der Workflow `op-api-speichern` synchronisiert automatisch alle OpenProject-Kommentare und Work Packages in die Qdrant-Vektordatenbank.
 
-**Manuelle Erstsynchronisation** – direkt nach dem Setup empfohlen, damit der Chatbot sofort Daten hat:
+**Manuelle Erstsynchronisation**, direkt nach dem Setup empfohlen, damit der Chatbot sofort Daten hat:
 
 1. In n8n den Workflow `op-api speichern` öffnen
 2. Oben auf **"Test workflow"** klicken
-3. Warten bis alle Knoten grün sind (je nach Datenmenge 1–10 Minuten)
+3. Warten bis alle Knoten grün sind (je nach Datenmenge variiert)
 
 ---
 
@@ -318,7 +318,7 @@ curl -X POST http://localhost:5678/webhook/invoke_n8n_agent \
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│              Datenpipeline  (alle 6 Stunden)             │
+│                    Datenpipeline                         │
 │                                                          │
 │  OpenProject API                                         │
 │    → Alle Projekte, Work Packages, Kommentare            │
@@ -332,7 +332,7 @@ curl -X POST http://localhost:5678/webhook/invoke_n8n_agent \
 │  Nutzer tippt Frage in Open WebUI (Port 3000)            │
 │    → n8n AI-Agent                                        │
 │    → Qdrant  (Top-200 semantisch ähnliche Einträge)      │
-│    → Ollama LLM  (llama3.1:8b  →  Antwort auf Deutsch)  │
+│    → Ollama LLM  (llama3.1:8b  →  Antwort auf Deutsch)   │
 │  Postgres speichert den Chat-Verlauf je Session          │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -392,7 +392,7 @@ Dieses Projekt ist ein Praxisprojekt und nicht für den öffentlichen Einsatz vo
 
 ### GPU-Anbindung (dringend empfohlen)
 
-> ⚠️ **Wichtiger Hinweis:** Ohne GPU-Beschleunigung läuft das LLM (`llama3.1:8b`) ausschließlich auf der CPU. Die Antwortzeiten betragen dann **30–120 Sekunden pro Nachricht** und machen den Chatbot für den produktiven Einsatz praktisch unbrauchbar. Eine NVIDIA-GPU verbessert die Performance auf **2–5 Sekunden** – das ist kein optionales Upgrade, sondern eine Grundvoraussetzung für sinnvolle Nutzung.
+> ⚠️ **Wichtiger Hinweis:** Ohne GPU läuft das LLM (`llama3.1:8b`) ausschließlich auf der CPU. Die Antwortzeiten betragen dann **wesentlich länger** und machen den Chatbot für den produktiven Einsatz praktisch unbrauchbar. Eine NVIDIA-GPU verbessert die Performance, das ist kein optionales Upgrade, sondern eine Grundvoraussetzung für sinnvolle Nutzung.
 
 #### Voraussetzungen
 
@@ -436,7 +436,7 @@ nvidia-smi
 
 ### Weitere Systeme anbinden
 
-Das System ist modular aufgebaut – weitere Datenquellen lassen sich über neue n8n-Workflows anbinden. Die Daten werden dabei immer nach demselben Prinzip verarbeitet: Inhalte abrufen → Embeddings erzeugen (Ollama) → in Qdrant speichern. Der AI-Agent greift dann automatisch auch auf diese Daten zu.
+Das System ist modular aufgebaut, weitere Datenquellen lassen sich über neue n8n-Workflows anbinden. Die Daten werden dabei immer nach demselben Prinzip verarbeitet: Inhalte abrufen → Embeddings erzeugen (Ollama) → in Qdrant speichern. Der AI-Agent greift dann automatisch auch auf diese Daten zu.
 
 ---
 
