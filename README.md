@@ -95,7 +95,7 @@ N8N_BASIC_AUTH_PASSWORD: dein_sicheres_passwort
 docker compose up -d
 ```
 
-Beim ersten Start werden alle Images automatisch aus dem Internet gezogen – das kann je nach Internetgeschwindigkeit **5–15 Minuten** dauern (Gesamtgröße ca. 10–15 GB).
+Beim ersten Start werden alle Images automatisch aus dem Internet gezogen, das kann je nach Internetgeschwindigkeit **5–15 Minuten** dauern (Gesamtgröße ca. 10–15 GB).
 
 ---
 
@@ -236,7 +236,7 @@ Beide Workflows über den Toggle oben rechts auf **"Active"** setzen.
 
 ## Open WebUI – N8N Pipe einrichten
 
-Die **N8N Pipe** ist eine Funktion für Open WebUI, die die Chat-Oberfläche direkt mit dem n8n AI-Agent verbindet. Ohne sie würde Open WebUI nur lokal installierte Ollama-Modelle nutzen – mit der Pipe werden alle Nachrichten stattdessen an den n8n-Workflow weitergeleitet, der Qdrant-Suche, Chat-Memory und die OpenProject-Daten einbindet.
+Die **N8N Pipe** ist eine Funktion für Open WebUI, die die Chat-Oberfläche direkt mit dem n8n AI-Agent verbindet. Ohne sie würde Open WebUI nur lokal installierte Ollama-Modelle nutzen, mit der Pipe werden alle Nachrichten stattdessen an den n8n-Workflow weitergeleitet, der Qdrant-Suche, Chat-Memory und die OpenProject-Daten einbindet.
 
 Quelle / Original: [N8N Pipe auf openwebui.com](https://openwebui.com/posts/c82c9b29-c517-4deb-bd42-d058aa889633)
 
@@ -332,7 +332,7 @@ curl -X POST http://localhost:5678/webhook/invoke_n8n_agent \
 │  Nutzer tippt Frage in Open WebUI (Port 3000)            │
 │    → n8n AI-Agent                                        │
 │    → Qdrant  (Top-200 semantisch ähnliche Einträge)      │
-│    → Ollama LLM  (llama3.1:8b  →  Antwort auf Deutsch)  │
+│    → Ollama LLM  (llama3.1:8b  →  Antwort auf Deutsch)   │
 │  Postgres speichert den Chat-Verlauf je Session          │
 └─────────────────────────────────────────────────────────┘
 ```
