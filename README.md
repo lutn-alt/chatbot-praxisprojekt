@@ -244,11 +244,12 @@ Quelle / Original: [N8N Pipe auf openwebui.com](https://openwebui.com/posts/c82c
 
 1. Open WebUI aufrufen: `http://localhost:3000`
 2. Als Admin anmelden
-3. Oben im Menü auf **"Functions"** klicken
-4. Oben rechts auf **"Import"** klicken
-5. Die Datei `n8n_pipe.json` aus dem Repository auswählen und importieren
-6. Die Funktion erscheint anschließend als **„N8N Pipe v0.2.0"** in der Liste
-7. Den Toggle rechts neben der Funktion auf **aktiv** (grün) setzen
+3. In das Admin panel gehen
+4. Oben im Menü auf **"Functions"** klicken
+5. Oben rechts auf **"Import"** klicken
+6. Die Datei `n8n_pipe.json` aus dem Repository auswählen und importieren
+7. Die Funktion erscheint anschließend als **„N8N Pipe v0.2.0"** in der Liste
+8. Den Toggle rechts neben der Funktion auf **aktiv** (grün) setzen
 
 ### Schritt 2: Valves konfigurieren
 
