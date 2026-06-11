@@ -51,7 +51,7 @@ Das System besteht aus folgenden Komponenten, die alle als Docker Container lauf
 | `open-webui`  | `ghcr.io/open-webui/open-webui:main`   | Chat-Oberfläche für den Endnutzer                   | 3000 → 8080  |
 | `n8n`         | `docker.n8n.io/n8nio/n8n:latest`       | Workflow-Automatisierung (AI-Agent + Datenpipeline) | 5678         |
 
-**Datenfluss:** OpenProject → n8n (Sync alle 6h) → Ollama Embeddings → Qdrant  
+**Datenfluss:** OpenProject → n8n → Ollama Embeddings → Qdrant  
 **Anfrage:** Open WebUI → n8n AI-Agent → Qdrant (semantische Suche) → Ollama LLM → Antwort
 
 ---
